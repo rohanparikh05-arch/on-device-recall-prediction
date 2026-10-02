@@ -1,0 +1,15 @@
+data/*
+!data/README.md
+
+.venv*/
+__pycache__/
+*.pyc
+.DS_Store
+
+*.mlpackage/
+
+halflife-regression/results/*
+!halflife-regression/results/hlr.settles.acl16.learning_traces.13m.weights
+
+analysis/fig*.png
+analysis/fig*.pdf

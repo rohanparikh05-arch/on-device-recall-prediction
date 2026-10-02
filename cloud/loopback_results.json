@@ -1,0 +1,38 @@
+{
+  "1": {
+    "payload_bytes": 78,
+    "loopback_mean_ms": 0.4499240025567512,
+    "loopback_median_ms": 0.46837551053613424,
+    "loopback_p95_ms": 0.5294170696288347,
+    "loopback_p99_ms": 0.550250057131052,
+    "server_inference_mean_ms": 0.32093526097014546,
+    "overhead_mean_ms": 0.12898874158660573
+  },
+  "32": {
+    "payload_bytes": 1102,
+    "loopback_mean_ms": 0.35233107628300786,
+    "loopback_median_ms": 0.3466459456831217,
+    "loopback_p95_ms": 0.3949578385800123,
+    "loopback_p99_ms": 0.4554172046482563,
+    "server_inference_mean_ms": 0.21631332502389947,
+    "overhead_mean_ms": 0.1360177512591084
+  },
+  "256": {
+    "payload_bytes": 8497,
+    "loopback_mean_ms": 0.5208702362142503,
+    "loopback_median_ms": 0.5187294445931911,
+    "loopback_p95_ms": 0.5354159511625767,
+    "loopback_p99_ms": 0.6020828150212765,
+    "server_inference_mean_ms": 0.21953165686378875,
+    "overhead_mean_ms": 0.3013385793504616
+  },
+  "1024": {
+    "payload_bytes": 33838,
+    "loopback_mean_ms": 1.18968250695616,
+    "loopback_median_ms": 1.1757295578718185,
+    "loopback_p95_ms": 1.2910000514239073,
+    "loopback_p99_ms": 1.3192500919103622,
+    "server_inference_mean_ms": 0.30400754263003665,
+    "overhead_mean_ms": 0.8856749643261235
+  }
+}
