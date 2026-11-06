@@ -1,0 +1,12 @@
+{
+  "after_load_mb" : 12.747552000000001,
+  "after_predictions_mb" : 12.78032,
+  "before_mb" : 9.9295039999999997,
+  "device" : {
+    "low_power_mode" : false,
+    "machine" : "iPhone18,3",
+    "os" : "Version 26.6.1 (Build 23G83)"
+  },
+  "model" : "neural",
+  "peak_mb" : 12.796704
+}

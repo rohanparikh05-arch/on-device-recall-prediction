@@ -1,22 +1,27 @@
-# On-device recall prediction
+# Predicting Word Recall on the Device Instead of the Cloud
 
-Code, trained weights and raw measurements for the paper "On-Device Recall
-Prediction for Language Learning: Comparable Accuracy Without a Cloud
-Round-Trip" by Rohan Parikh, Dhanvanth Lakshman and Viraj Gadeela, to appear at
-IEEE CCNC 2027.
+Language apps decide which word you review next by predicting whether you still
+remember it. This repository runs that prediction on a laptop and an iPhone and
+compares the speed and accuracy with a cloud round-trip.
+
+It holds the code, trained weights and raw measurements for the paper
+"On-Device Recall Prediction for Language Learning: Comparable Accuracy Without
+a Cloud Round-Trip" by Rohan Parikh, Dhanvanth Lakshman and Viraj Gadeela, to
+appear at IEEE CCNC 2027.
 
 We train a small neural half-life regression (HLR) model on Duolingo's public
 dataset of 12.9 million learning traces, convert it to Core ML and MLX, and
-compare its on-device latency with a cloud round-trip built from measured
-protocol overhead plus published network latency.
+measure it on both devices. The cloud figure combines measured protocol overhead
+with published network latency.
 
 ## Layout
 
 | Directory | Contents |
 |---|---|
-| `halflife-regression/` | Duolingo's original HLR code (Settles and Meeder, ACL 2016), ported to Python 3, plus the linear model weights we trained with it |
-| `model/` | User-grouped data split, the neural model, training, metrics, the paired bootstrap, and the trained weights |
-| `benchmark/` | MLX and Core ML versions of both models, fidelity checks, the precision check, latency benchmarks, and our latency results |
+| `halflife-regression/` | Duolingo's original HLR code (Settles and Meeder, ACL 2016), ported to Python 3, plus our linear model weights: one set trained on the original row-ordered split and five on the user-grouped split |
+| `model/` | User-grouped data split, the neural model, training for both models, metrics, the paired bootstrap, the scheduler test, and the trained weights |
+| `benchmark/` | MLX and Core ML versions of both models, fidelity checks, the precision check, latency and memory benchmarks, and our laptop results |
+| `benchmark/ios/` | The iPhone test app, a Mac build of the same harness, and our raw phone and Mac results |
 | `cloud/` | The inference server, the loopback client, the cloud estimate, and our loopback results |
 | `analysis/` | Baseline scoring and the two figures |
 | `data/` | Empty. The dataset goes here (see below) |
@@ -36,8 +41,9 @@ python3.12 -m venv .venv-coreml
 .venv-coreml/bin/pip install -r requirements-coreml.txt
 ```
 
-MLX and Core ML both require Apple silicon. Our measurements come from a
-MacBook with an Apple M5 Pro.
+MLX and Core ML both require Apple silicon. Our laptop measurements come from a
+MacBook with an Apple M5 Pro, and our phone measurements from an iPhone 17 on
+iOS 26.6.1. Building the phone app also needs Xcode.
 
 ## Data
 
@@ -53,16 +59,19 @@ Run everything from the repository root unless a command says otherwise.
 Scripts that start with `coreml_` and `precision_check.py` use `.venv-coreml`;
 the rest use `.venv`.
 
-The repository ships the exact weights behind the paper's numbers. Both
+The repository ships the exact weights behind the paper's numbers.
 `experiment.py` and `model/train.py` shuffle the training data without a seed,
-so retraining gives slightly different weights and metrics. The scoring and
-benchmark scripts below use the shipped weights, so they should match the paper
-exactly, apart from latency, which depends on your machine.
+so retraining with them gives slightly different weights and metrics.
+`model/train_linear_user_split.py` takes a seed, though retraining may not match
+our files exactly on a different machine. The scoring and benchmark scripts
+below use the shipped weights, so they should match the paper apart from
+latency and memory, which depend on your machine.
 
 Some scripts overwrite files that ship with the repository:
 
 - `experiment.py -m hlr` overwrites `halflife-regression/results/hlr.settles.acl16.learning_traces.13m.weights`
 - `model/train.py` overwrites `model/neural_hlr.safetensors`, `model/vocab.json` and `model/eval_metrics.json`
+- `model/train_linear_user_split.py` overwrites `halflife-regression/results/hlr.user_split.weights` unless you pass `--out`
 - the two neural latency benchmarks overwrite `benchmark/neural_*_results.json`
 - `cloud/client_benchmark.py` overwrites `cloud/loopback_results.json`
 
@@ -112,22 +121,60 @@ The first script scores both models on the same test set. The second runs
 metric.
 
 The split hashes each `user_id` with MD5 and puts about 10% of users in the
-test set, so no learner appears on both sides. The linear weights in
-`halflife-regression/results/` come from experiment.py, which trains on the
-first 90% of rows in file order. That portion contains rows from 10,817 of the
-11,618 users in our test set, so the linear model has seen most of the test
-learners during training and the neural model has seen none of them.
+test set, so no learner appears on both sides. Both models train on the same
+11,551,576 rows from the remaining users.
 
-To retrain the neural model (about 78 seconds on our machine):
+To retrain them:
 
 ```
 .venv/bin/python model/train.py
+.venv/bin/python model/train_linear_user_split.py --seed 0
 ```
 
-The defaults are the settings used in the paper: 8 epochs, learning rate
-0.001, batch size 8192.
+The neural defaults are the settings used in the paper: 8 epochs, learning rate
+0.001, batch size 8192. That run takes about 78 seconds on our machine. Table
+III uses `hlr.user_split.weights`, which is seed 0. Seeds 1 to 4 are
+`hlr.user_split.seed1.weights` and so on, and the paper reports the range across
+all five. Pass `--out` to write a new seed to its own file. To score one of them:
 
-### Table IV: on-device latency
+```
+.venv/bin/python model/compare_on_user_split.py --linear-weights halflife-regression/results/hlr.user_split.seed1.weights
+.venv/bin/python model/bootstrap_significance.py --linear-weights halflife-regression/results/hlr.user_split.seed1.weights
+```
+
+### Leakage in the row-ordered split
+
+`experiment.py` trains on the first 90% of rows in file order. That portion
+contains 90.1% of our test rows and rows from 10,817 of our 11,618 test users.
+This script prints those counts, along with the 182 test rows and 108 words the
+neural model never saw in training:
+
+```
+.venv/bin/python model/leakage_check.py
+```
+
+To score the row-ordered weights on our test set:
+
+```
+.venv/bin/python model/compare_on_user_split.py --linear-weights halflife-regression/results/hlr.settles.acl16.learning_traces.13m.weights
+```
+
+### Scheduler test
+
+Each model picks the word with the lowest predicted recall in each test session,
+which is the word a scheduler would review first. This script reports how often
+the models agree and how often each pick has the lowest observed recall:
+
+```
+.venv/bin/python model/scheduler_agreement.py --linear-weights \
+    halflife-regression/results/hlr.user_split.weights \
+    halflife-regression/results/hlr.user_split.seed{1,2,3,4}.weights
+```
+
+The bootstrap interval on the gap compares the neural model with the first file
+listed.
+
+### Table IV: on-device latency on the laptop
 
 ```
 .venv/bin/python benchmark/neural_fidelity_check.py
@@ -145,8 +192,62 @@ file. `coreml_neural_hlr.py` builds `benchmark/NeuralHLR.mlpackage`, and
 forward pass on 2,000 rows.
 
 `fidelity_check.py`, `benchmark_latency.py` and their `coreml_` counterparts do
-the same for the linear model. We used them while building the harness; the
-paper reports latency for the neural model only.
+the same for the linear model.
+
+### Linear versus neural: speed and memory
+
+These run both models in one session, so the two sets of timings share the same
+machine conditions:
+
+```
+.venv/bin/python benchmark/latency_both_models_mlx.py
+.venv-coreml/bin/python benchmark/latency_both_models_coreml.py
+```
+
+For memory, run one model per process:
+
+```
+.venv-coreml/bin/python benchmark/coreml_memory.py benchmark/HLR_user_split.mlpackage
+.venv-coreml/bin/python benchmark/coreml_memory.py benchmark/NeuralHLR.mlpackage
+```
+
+The 0.61 MB and 0.08 MB weight sizes in the paper are the `weight.bin` files
+inside the two packages.
+
+### Table IV: on-device latency on the iPhone
+
+Our raw results are in `benchmark/ios/results/`. Table IV reports the mean of
+`iphone17_exp2_run1.json` and `iphone17_exp2_run2.json`, using the `all` compute
+units setting. The `mac_exp2_*` files are the same app code running on the laptop.
+
+To run it yourself, build the phone models and test rows, which needs the dataset:
+
+```
+.venv-coreml/bin/python benchmark/ios/export_ios_assets.py
+```
+
+Then open `benchmark/ios/HLRBench.xcodeproj` in Xcode, set your own signing team
+and bundle ID, and run it on a phone. The app times both models, compares their
+predictions with the reference values, and writes `results.json` to its Documents
+folder. Launch arguments `mem-neural` and `mem-linear` run the memory test instead.
+
+Check the fidelity numbers before you trust the timings. On iOS 26.6, Core ML
+evaluated our `pow(2, d)` operation as `d**2`, so the first phone build returned
+a half-life of 57.52 days where the reference gives 191.90. The laptop gave the
+right answer from the same model. `iphone17_pow_FAILED_fidelity.json` and
+`iphone17_pow_diag.json` record that failure. `export_ios_assets.py` now uses
+Core ML's `exp2` operation for the phone models.
+
+To run the same harness on a Mac:
+
+```
+cd benchmark/ios
+mkdir -p build/mac
+xcrun coremlcompiler compile HLRBench/NeuralHLR.mlpackage build/mac
+xcrun coremlcompiler compile HLRBench/LinearHLR.mlpackage build/mac
+xcrun swiftc -O HLRBench/Bench.swift mac/main.swift -o build/mac_bench
+./build/mac_bench build/mac HLRBench/fidelity_rows.json results.json
+```
 
 ### Tables V and VI, Fig. 2: cloud round-trip
 

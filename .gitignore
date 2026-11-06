@@ -10,6 +10,12 @@ __pycache__/
 
 halflife-regression/results/*
 !halflife-regression/results/hlr.settles.acl16.learning_traces.13m.weights
+!halflife-regression/results/hlr.user_split*.weights
 
 analysis/fig*.png
 analysis/fig*.pdf
+
+benchmark/ios/build/
+# built from the dataset by export_ios_assets.py
+benchmark/ios/HLRBench/fidelity_rows.json
+xcuserdata/

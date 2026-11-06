@@ -27,12 +27,12 @@ DPI = 400
 plt.rcParams.update({
     'font.family': 'serif',
     'font.serif': ['Times New Roman', 'DejaVu Serif'],
-    'font.size': 7,
-    'axes.labelsize': 7,
-    'axes.titlesize': 7,
-    'xtick.labelsize': 6.5,
-    'ytick.labelsize': 6.5,
-    'legend.fontsize': 6,
+    'font.size': 8,
+    'axes.labelsize': 8,
+    'axes.titlesize': 8,
+    'xtick.labelsize': 8,
+    'ytick.labelsize': 8,
+    'legend.fontsize': 8,
     'axes.linewidth': 0.6,
     'grid.linewidth': 0.4,
     'lines.linewidth': 1.2,
@@ -102,7 +102,7 @@ def check_cvd(colors, label):
 
 
 def fig_latency():
-    fig, ax = plt.subplots(figsize=(COL_W, 2.35))
+    fig, ax = plt.subplots(figsize=(COL_W, 2.3))
     x = np.arange(len(BATCH))
 
     series = [
@@ -131,13 +131,13 @@ def fig_latency():
     ax.set_axisbelow(True)
     for s in ('top', 'right'):
         ax.spines[s].set_visible(False)
-    ax.legend(frameon=False, loc='center', bbox_to_anchor=(0.58, 0.47),
+    ax.legend(frameon=False, loc='center', bbox_to_anchor=(0.58, 0.42),
               handlelength=2.2, labelspacing=0.25)
 
     # label the gap at batch 1
     ax.annotate('', xy=(0, COREML[0]), xytext=(0, LOOPBACK[0] + RTT['Cloud: 5G distant region']),
                 arrowprops=dict(arrowstyle='<->', color=GRAY, lw=0.7))
-    ax.text(0.06, 2.4, '1169x', fontsize=6, color=GRAY, rotation=90,
+    ax.text(0.06, 2.4, '1169x', fontsize=8, color=GRAY, rotation=90,
             va='center', ha='left')
 
     fig.tight_layout(pad=0.3)
@@ -151,11 +151,11 @@ def fig_latency():
 def fig_bootstrap():
     # the three metrics differ in scale, so each gets its own panel and axis
     metrics = [
-        ('MAE (lower is better)', 0.0018, 0.0017, 0.0019, True),
-        ('CORh (higher is better)', 0.0165, 0.0134, 0.0195, True),
-        ('AUC (higher is better)', -0.0012, -0.0014, -0.0010, False),
+        ('MAE (lower is better)', -0.0018, -0.0019, -0.0017, True),
+        ('CORh (higher is better)', 0.0210, 0.0178, 0.0240, True),
+        ('AUC (higher is better)', -0.0011, -0.0013, -0.0009, False),
     ]
-    fig, axes = plt.subplots(3, 1, figsize=(COL_W, 2.5))
+    fig, axes = plt.subplots(3, 1, figsize=(COL_W, 2.15))
     for ax, (name, pt, lo, hi, favorable) in zip(axes, metrics):
         color = BLACK if favorable else ORANGE
         ax.axvline(0, color=GRAY, linestyle='--', linewidth=0.8, zorder=1)
@@ -168,16 +168,16 @@ def fig_bootstrap():
         ax.set_ylim(-0.6, 0.6)
         ax.set_yticks([])
         ax.set_ylabel('')
-        ax.text(0.015, 0.80, name, transform=ax.transAxes, fontsize=6.5,
+        ax.text(0.015, 0.98, name, transform=ax.transAxes, fontsize=8,
                 va='top', ha='left')
-        ax.text(0.985, 0.80, f'{pt:+.4f}  [{lo:+.4f}, {hi:+.4f}]',
-                transform=ax.transAxes, fontsize=6, va='top', ha='right',
+        ax.text(0.985, 0.98, f'{pt:+.4f}  [{lo:+.4f}, {hi:+.4f}]'.replace('-', '−'),
+                transform=ax.transAxes, fontsize=8, va='top', ha='right',
                 color=GRAY)
         ax.tick_params(axis='x', length=2, pad=1.5)
         for s in ('top', 'right', 'left'):
             ax.spines[s].set_visible(False)
         ax.spines['bottom'].set_linewidth(0.6)
-    axes[-1].set_xlabel('Neural minus linear (95% bootstrap CI, resampled by learner)')
+    axes[-1].set_xlabel('Neural minus linear (95% bootstrap interval, resampled by learner)')
     fig.tight_layout(pad=0.25, h_pad=0.6)
     for ext in ('png', 'pdf'):
         fig.savefig(os.path.join(HERE, f'fig1_bootstrap.{ext}'), dpi=DPI,

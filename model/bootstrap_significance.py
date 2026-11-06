@@ -25,7 +25,7 @@ from data_split import load_split  # noqa: E402
 REPO_ROOT = os.path.join(os.path.dirname(__file__), '..')
 DATA_FILE = os.path.join(REPO_ROOT, 'data', 'settles.acl16.learning_traces.13m.csv.gz')
 LINEAR_WEIGHTS = os.path.join(REPO_ROOT, 'halflife-regression', 'results',
-                               'hlr.settles.acl16.learning_traces.13m.weights')
+                               'hlr.user_split.weights')
 
 
 def rankdata_avg(a):
@@ -56,6 +56,7 @@ def auc_score(labels, scores):
 
 def main():
     argparser = argparse.ArgumentParser()
+    argparser.add_argument('--linear-weights', default=LINEAR_WEIGHTS)
     argparser.add_argument('--resamples', type=int, default=1000)
     argparser.add_argument('--seed', type=int, default=0)
     argparser.add_argument('-x', dest='max_lines', type=int, default=None)
@@ -67,7 +68,7 @@ def main():
     wrong = mx.array(test['wrong'], dtype=mx.float32)
     t = mx.array(test['t'], dtype=mx.float32)
 
-    linear_model = MLXHLRModel(load_linear_weights(LINEAR_WEIGHTS))
+    linear_model = MLXHLRModel(load_linear_weights(args.linear_weights))
     lin_p, lin_h = linear_model.forward(right, wrong, t,
                                         linear_model.lexeme_indices(test['lexeme_key']))
     neural_model = MLXNeuralHLRModel()

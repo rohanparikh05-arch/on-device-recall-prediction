@@ -1,0 +1,12 @@
+{
+  "after_load_mb" : 3.9326880000000002,
+  "after_predictions_mb" : 4.0309920000000004,
+  "before_mb" : 1.556816,
+  "device" : {
+    "low_power_mode" : false,
+    "machine" : "arm64",
+    "os" : "Version 26.6.2 (Build 25G83)"
+  },
+  "model" : "linear",
+  "peak_mb" : 4.9812399999999997
+}
