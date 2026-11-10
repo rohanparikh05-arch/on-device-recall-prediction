@@ -6,7 +6,7 @@ compares the speed and accuracy with a cloud round-trip.
 
 It holds the code, trained weights and raw measurements for the paper
 "On-Device Recall Prediction for Language Learning: Comparable Accuracy Without
-a Cloud Round-Trip" by Rohan Parikh, Dhanvanth Lakshman and Viraj Gadeela, to
+a Cloud Round-Trip" by Rohan Parikh, Viraj Gadeela and Dhanvanth Lakshman, to
 appear at IEEE CCNC 2027.
 
 We train a small neural half-life regression (HLR) model on Duolingo's public
